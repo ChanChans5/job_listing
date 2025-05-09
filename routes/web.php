@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $job = Job::all();
-    dd($job);
     return view('home');
 });
 Route::get('/jobs', function () {
-    return view('jobs', ['jobs' => Job::all()]);
+    $jobs = Job::with('employer')->paginate(5); 
+    return view('jobs', ['jobs' => $jobs]);
 });
 Route::get('/jobs/{id}', function ($id) {
     $job = Job::find($id);
