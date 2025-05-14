@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Job;
+use App\Models\User;
+use App\Mail\JobPosted;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 
 class JobController extends Controller
 {
@@ -21,65 +25,61 @@ class JobController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
+    public function create(Job $job)
+    {   
         return view('jobs.create');
     }
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         request()->validate([
-            'title' => ['required', 'min:3'],
+            'title' => ['required', 'min:3'], 
             'salary' => ['required']
         ]);
-        Job::create([
+        $job = Job::create([
             'title' => request('title'),
             'salary' => request('salary'),
             'employer_id' => 1
         ]);
-        
+        Mail::to($job->employer->user)->queue(
+            new JobPosted($job)
+        );
         return redirect('/jobs');
     }
-
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Job $job)
     {
-        $job = Job::find($id);
-
         return view('jobs.show', ['job' => $job]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
-    {
-        $job = Job::find($id);
+    public function edit(Job $job)
+    {   
         return view('jobs.edit', ['job' => $job]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Job $job)
     {
-        //validate
+        Gate::authorize('edit-job', $job);
+        
         request()->validate([
             'title' => ['required', 'min:3'],
             'salary' => ['required']
         ]);
-        //authorize
-        //update
-        $job = Job::findOrFail($id);
+
         $job->update([
             'title' => request('title'),
             'salary' => request('salary')
-        ]);
+        ]); 
 
         return redirect('/jobs/' . $job->id);
     }
@@ -87,9 +87,10 @@ class JobController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Job $job)
     {
-        $job = Job::findOrFail($id)->delete();
+        Gate::authorize('edit-job', $job);
+        $job->delete();
 
         return redirect('/jobs');
     }

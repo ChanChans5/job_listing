@@ -23,7 +23,7 @@ class JobFactory extends Factory
             'salary' => '$50, 000',
         ];
     }
-
+    
     // public function unverified(): static {
     //     return $this->state(fn (array $attributes) => [
     //         'email_verified_at' => null,
